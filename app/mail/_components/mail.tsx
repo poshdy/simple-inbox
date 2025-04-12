@@ -77,7 +77,7 @@ const Mail = ({
             ASK AI
           </div>
         </ResizablePanel>
-        <ResizableHandle withHandle className="bg-gray-200 dark:bg-gray-700" />
+        <ResizableHandle withHandle className="bg-muted" />
 
         {/* THREAD LIST */}
         <ResizablePanel
@@ -90,16 +90,10 @@ const Mail = ({
               <h1 className="text-md font-bold p-0">Inbox</h1>
 
               <TabsList className="ml-auto">
-                <TabsTrigger
-                  className="text-zinc-600 dark:text-zinc-200"
-                  value="inbox"
-                >
+                <TabsTrigger className="" value="inbox">
                   Inbox
                 </TabsTrigger>
-                <TabsTrigger
-                  className="text-zinc-600 dark:text-zinc-200"
-                  value="done"
-                >
+                <TabsTrigger className="" value="done">
                   Done
                 </TabsTrigger>
               </TabsList>
@@ -117,7 +111,7 @@ const Mail = ({
           </Tabs>
         </ResizablePanel>
 
-        <ResizableHandle withHandle className="bg-gray-200 dark:bg-gray-700" />
+        <ResizableHandle withHandle className="bg-muted" />
 
         <ResizablePanel defaultSize={defaultLayout[2]} minSize={40}>
           Message

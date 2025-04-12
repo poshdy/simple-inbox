@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "@/trpc/react";
+import { ThemeProvider } from "@/components/themes-provider";
 
 const poppins = Poppins({
   weight: ["200", "300", "400", "500", "600", "700", "900"],
@@ -21,9 +22,13 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <TRPCReactProvider>
-          <body className={`${poppins.className} antialiased`}>{children}</body>
-        </TRPCReactProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <TRPCReactProvider>
+            <body className={`${poppins.className} antialiased`}>
+              {children}
+            </body>
+          </TRPCReactProvider>
+        </ThemeProvider>
       </html>
     </ClerkProvider>
   );
