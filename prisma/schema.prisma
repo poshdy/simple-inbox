@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String  @id @default(cuid())
+  emailAddress String
+  firstName    String
+  lastName     String
+  imageUrl     String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  accounts  Account[]
+}
+
+model Account {
+  id            String   @id
+  userId        String
+  provider      String
+  accessToken   String   @unique
+  refreshToken  String
+  emailAddress  String
+  name          String
+  nextPageToken String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Thread       Thread[]
+  EmailAddress EmailAddress[]
+}
+
+model Thread {
+  id String @id @default(cuid())
+
+  // last message date
+
+  participantIds String[]
+
+  account   Account @relation(fields: [accountId], references: [id])
+  accountId String
+
+  subject String
+  done    Boolean @default(false)
+
+  inboxStatus Boolean @default(true)
+  draftStatus Boolean @default(false)
+  sentStatus  Boolean @default(false)
+
+  emails Email[]
+
+  @@index([accountId])
+  @@index([done])
+  @@index([inboxStatus])
+  @@index([draftStatus])
+  @@index([sentStatus])
+}
+
+model Email {
+  id       String  @id @default(cuid())
+  threadId String?
+
+  createdTime      DateTime
+  sentAt           DateTime
+  receivedAt       DateTime
+  lastModifiedTime DateTime
+
+  subject     String
+  bodySnippet String
+  body        String
+  fromId      String
+
+  inReplyTo  String?
+  references String?
+
+  sysLabels String[]
+
+  sensitivity Sensitivity @default(normal)
+  emailLabel  EmailLabel  @default(inbox)
+
+  internetMessageId  String
+  sysClassifications String[]
+  hasAttachments     Boolean
+  attachments        EmailAttachment[]
+  threadIndex        String?
+  internetHeaders    Json[]
+  nativeProperties   Json?
+  folderId           String?
+
+  thread  Thread?        @relation(fields: [threadId], references: [id])
+  from    EmailAddress   @relation("FromEmail", fields: [fromId], references: [id])
+  to      EmailAddress[] @relation("ToEmails")
+  cc      EmailAddress[] @relation("CcEmails")
+  bcc     EmailAddress[] @relation("BccEmails")
+  replyTo EmailAddress[] @relation("ReplyToEmails")
+
+  @@index([threadId])
+  @@index([emailLabel])
+  @@index([sentAt])
+}
+
+model EmailAddress {
+  id            String  @id @default(cuid())
+  name          String?
+  address       String
+  raw           String?
+  sentEmails    Email[] @relation("FromEmail")
+  receivedTo    Email[] @relation("ToEmails")
+  receivedCc    Email[] @relation("CcEmails")
+  receivedBcc   Email[] @relation("BccEmails")
+  replyToEmails Email[] @relation("ReplyToEmails")
+
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  @@unique([accountId, address])
+}
+
+model EmailAttachment {
+  id       String @id @default(cuid())
+  name     String
+  mimeType String
+  size     Int
+
+  emailId String?
+  email   Email?  @relation(fields: [emailId], references: [id])
+}
+
+enum EmailLabel {
+  inbox
+  draft
+  sent
+}
+
+enum Sensitivity {
+  normal
+  private
+  personal
+  confidential
+}
