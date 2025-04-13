@@ -14,6 +14,10 @@ import dynamic from "next/dynamic";
 import SearchMails from "./search-mails";
 import ThreadList from "./threads/thread-list";
 
+import MessageActions from "./message/message-actions";
+
+import Messages from "./message/messages";
+
 const Sidebar = dynamic(
   () => {
     return import("./sidebar");
@@ -114,7 +118,11 @@ const Mail = ({
         <ResizableHandle withHandle className="bg-muted" />
 
         <ResizablePanel defaultSize={defaultLayout[2]} minSize={40}>
-          Message
+          <div className="overflow-y-scroll h-screen">
+
+          <MessageActions />
+          <Messages />
+          </div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </TooltipProvider>

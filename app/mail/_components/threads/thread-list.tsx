@@ -17,7 +17,7 @@ const ThreadList = () => {
   }
 
   const groupByDate = threads?.reduce((acc, thread) => {
-    const date = dayjs(thread?.lastMessage?.sentAt ?? new Date()).format(
+    const date = dayjs(thread?.emails[0]?.sentAt ?? new Date()).format(
       "DD MMM YYYY"
     );
     if (!acc[date]) {
@@ -52,15 +52,15 @@ const ThreadList = () => {
                   <div className="flex flex-col gap-1 w-full">
                     <div className="flex items-center  justify-between">
                       <h2 className="font-bold text-sm">
-                        {thread.lastMessage.from.name ||
-                          thread.lastMessage.from.raw
+                        {thread.emails[0].from.name ||
+                          thread.emails[0].from.raw
                             ?.split(" ")
                             .slice(0, -1)
                             .join() ||
-                          thread.lastMessage.from.address}
+                          thread.emails[0].from.address}
                       </h2>
                       <span className="text-xs font-medium text-zinc-700">
-                        {timeFromNow(thread.lastMessage.sentAt)}
+                        {timeFromNow(thread.emails[0].sentAt)}
                       </span>
                     </div>
 
@@ -70,13 +70,13 @@ const ThreadList = () => {
                   </div>
                   <div
                     dangerouslySetInnerHTML={{
-                      __html: thread.lastMessage.bodySnippet,
+                      __html: thread.emails[0].bodySnippet,
                     }}
                     className="text-xs line-clamp-3 text-zinc-500"
                   />
 
                   <div className="space-x-2">
-                    {thread.lastMessage.label.map((label, key) => (
+                    {thread.emails[0].sysLabels.map((label, key) => (
                       <Badge variant={"secondary"} key={key}>
                         {label}
                       </Badge>

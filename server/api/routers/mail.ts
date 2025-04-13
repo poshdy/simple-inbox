@@ -35,17 +35,18 @@ export const mailsRouter = createTRPCRouter({
         filter.done = {
           equals: done,
         };
-        const threads = await ctx.db.thread.findMany({
+        return ctx.db.thread.findMany({
           where: filter,
           take: 15,
           include: {
             emails: {
               orderBy: { sentAt: "asc" },
-              take: 1,
               select: {
                 id: true,
                 from: true,
                 to: true,
+                subject: true,
+                body: true,
                 bodySnippet: true,
                 sysClassifications: true,
                 sysLabels: true,
@@ -60,17 +61,55 @@ export const mailsRouter = createTRPCRouter({
             },
           },
         });
+      } catch (error) {
+        console.error("ERROR FETCHING THREADS", error);
+      }
+    }),
 
-        return threads.map(({ emails, ...rest }) => {
-          const { sysLabels, sysClassifications, ...email } = emails[0];
-          return {
-            ...rest,
-            lastMessage: {
-              ...email,
-              label: sysLabels.concat(sysClassifications),
+  getThread: protectedProcedure
+    .input(threadSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        const { accountId, tab, done } = input;
+        const userId = ctx.auth.userId;
+
+        await authorizeAccountAccess(accountId, userId);
+
+        const filter: Prisma.ThreadWhereInput = { accountId };
+
+        if (tab === "Inbox") {
+          filter.inboxStatus = true;
+        } else if (tab === "draft") {
+          filter.draftStatus = true;
+        } else if (tab === "sent") {
+          filter.sentStatus = true;
+        } else {
+          filter.inboxStatus = true;
+        }
+
+        filter.done = {
+          equals: done,
+        };
+        const thread = await ctx.db.thread.findUnique({
+          where: { id: "" },
+          include: {
+            emails: {
+              orderBy: { sentAt: "asc" },
+              select: {
+                id: true,
+                from: true,
+                to: true,
+                subject: true,
+                body: true,
+                bodySnippet: true,
+                sysClassifications: true,
+                sysLabels: true,
+                sentAt: true,
+              },
             },
-          };
+          },
         });
+        return thread?.emails[0];
       } catch (error) {
         console.error("ERROR FETCHING THREADS", error);
       }

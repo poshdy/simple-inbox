@@ -1,10 +1,8 @@
 import { useTRPC } from "@/trpc/root";
 import { EmailLabel } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
-import { atom, useAtom } from "jotai";
 import { useLocalStorage } from "usehooks-ts";
-
-const threadAtom = atom<string | null>(null);
+import { useThread } from "./use-thread";
 
 const useThreads = () => {
   const trpc = useTRPC();
@@ -12,7 +10,7 @@ const useThreads = () => {
     trpc.accounts.get.queryOptions(undefined)
   );
 
-  const [threadId, setThreadId] = useAtom(threadAtom);
+  const [threadId, setThreadId] = useThread();
   const [accountId] = useLocalStorage("accountId", "");
   const [tab] = useLocalStorage<EmailLabel>(
     "simple-inbox-tab",

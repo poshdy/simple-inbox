@@ -21,15 +21,15 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <html lang="en">
           <TRPCReactProvider>
             <body className={`${poppins.className} antialiased`}>
               {children}
             </body>
           </TRPCReactProvider>
-        </ThemeProvider>
-      </html>
+        </html>
+      </ThemeProvider>
     </ClerkProvider>
   );
 }
