@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "@/trpc/react";
 import { ThemeProvider } from "@/components/themes-provider";
+import KbarProvider from "@/components/kbar";
 
 const poppins = Poppins({
   weight: ["200", "300", "400", "500", "600", "700", "900"],
@@ -21,12 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="dark">
         <html lang="en">
           <TRPCReactProvider>
-            <body className={`${poppins.className} antialiased`}>
-              {children}
-            </body>
+            <KbarProvider>
+              <body className={`${poppins.className} antialiased`}>
+                {children}
+              </body>
+            </KbarProvider>
           </TRPCReactProvider>
         </html>
       </ThemeProvider>
