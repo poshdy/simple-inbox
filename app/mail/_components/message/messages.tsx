@@ -3,6 +3,7 @@ import React from "react";
 import { Separator } from "@/components/ui/separator";
 import MessageHeader from "./message-header";
 import Message from "./message";
+import ReplyBox from "./reply-box";
 
 const Messages = () => {
   const { threads, threadId, isPending } = useThreads();
@@ -25,8 +26,7 @@ const Messages = () => {
           </div>
           <Separator />
           <div className="flex-1"></div>
-          {/* Reply BOX */}
-          Reply box
+          <ReplyBox />
         </div>
       ) : (
         <div className="flex items-center justify-center p-8">

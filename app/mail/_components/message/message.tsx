@@ -43,10 +43,10 @@ const Message = ({ email }: MessageProps) => {
           </span>
         </div>
 
-        <Letter
+        {/* <Letter
           className=" rounded-md w-[85%] mx-auto"
           html={email?.body ?? ""}
-        />
+        /> */}
       </div>
     </section>
   );
