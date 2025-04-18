@@ -12,7 +12,7 @@ const Messages = () => {
   const thread = threads?.find((t) => t?.id == threadId);
 
   return (
-    <section className="h-full border flex-1 overflow-y-scroll">
+    <section className="h-full border flex-1 overflow-y-scroll hide-scrollbar">
       {thread ? (
         <div className="w-full h-full flex flex-col">
           <MessageHeader data={thread.emails[0]} />
@@ -26,7 +26,7 @@ const Messages = () => {
           </div>
           <Separator />
           <div className="flex-1"></div>
-          <ReplyBox />
+          <ReplyBox threadId={thread.id} accountId={thread.accountId} />
         </div>
       ) : (
         <div className="flex items-center justify-center p-8">

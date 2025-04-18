@@ -1,108 +1,129 @@
-import React from "react";
+"use client";
+import "./style.css";
+import React, { useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import Heading, { Level } from "@tiptap/extension-heading";
+import Heading from "@tiptap/extension-heading";
+import TextAlign from "@tiptap/extension-text-align";
+import Underline from "@tiptap/extension-underline";
+import Highlight from "@tiptap/extension-highlight";
 import StarterKit from "@tiptap/starter-kit";
 import { Button } from "../ui/button";
-import {
-  BlocksIcon,
-  BoldIcon,
-  Code,
-  Heading1,
-  Heading2,
-  Heading3,
-} from "lucide-react";
+import MenuBar from "./menu-bar";
+import MultiSelect, { InputValue } from "./multi-select";
+import { Input } from "../ui/input";
+import { Separator } from "../ui/separator";
 
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+interface EditorProps {
+  value: string;
+  setValue: React.Dispatch<React.SetStateAction<string>>;
+  subject: string;
+  setSubject: (value: string) => void;
 
-const EmailEditor = () => {
+  toValues: InputValue[];
+  setToValues: (value: InputValue[]) => void;
+
+  ccValues: InputValue[];
+  setCcValues: (value: InputValue[]) => void;
+
+  to: string[];
+
+  defaultToolbarExpanded?: boolean;
+
+  handleSend: (value: string) => void;
+}
+const EmailEditor = ({
+  setValue,
+  value,
+  ccValues,
+  handleSend,
+  setCcValues,
+  setSubject,
+  setToValues,
+  subject,
+  to,
+  toValues,
+  defaultToolbarExpanded = false,
+}: EditorProps) => {
+  const [expanded, setExpanded] = useState<boolean>(defaultToolbarExpanded);
   const editor = useEditor({
+    shouldRerenderOnTransaction: false,
+
     extensions: [
       StarterKit,
+      Underline,
+      Highlight,
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
       Heading.configure({
         levels: [1, 2, 3],
       }),
     ],
     onUpdate: (e) => {
-      console.log(e.editor.getHTML());
+      setValue(e.editor.getHTML());
     },
-    content: "Hello world!",
     immediatelyRender: false,
   });
   return (
-    <section className=" w-[95%] mx-auto mb-2 rounded-lg overflow-clip bg-background border border-muted h-[50vh] text-black ">
-      <div className="w-full p-3 bg-primary-foreground flex items-start gap-3">
-        <Select
-          onValueChange={(e) => {
-            editor
-              ?.chain()
-              .focus()
-              .setHeading({
-                level: Number(e) as Level,
-              })
-              .run();
-          }}
-        >
-          <SelectTrigger className="w-[60px]">
-            <SelectValue placeholder="H" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Headings</SelectLabel>
-              <SelectItem value="1">
-                <Heading1 /> Heading 1
-              </SelectItem>
-              <SelectItem value="2">
-                <Heading2 /> Heading 2
-              </SelectItem>
-              <SelectItem value="3">
-                <Heading3 /> Heading 3
-              </SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <Button
-          className={`${
-            editor?.isActive("blockQoute")
-              ? "bg-accent-foreground"
-              : "bg-accent"
-          }`}
-          onClick={() => editor?.chain().toggleBlockquote().run()}
-          size={"icon"}
-        >
-          <BlocksIcon />
-        </Button>
-        <Button
-          className={`${
-            editor?.isActive("codeBlock") ? "bg-accent-foreground" : "bg-accent"
-          }`}
-          onClick={() => editor?.chain().toggleCodeBlock().run()}
-          size={"icon"}
-        >
-          <Code />
-        </Button>
-        <Button
-          className={`${
-            editor?.isActive("bold") ? "bg-accent-foreground" : "bg-accent"
-          }`}
-          onClick={() => editor?.chain().toggleBold().run()}
-          size={"icon"}
-        >
-          <BoldIcon />
-        </Button>
+    <section className="space-y-2 rounded-lg overflow-clip bg-background/90  text-black overflow-y-scroll hide-scrollbar">
+      <div>
+        <MenuBar editor={editor} />
       </div>
-      {/* MENU BAR */}
-      <EditorContent
-        className="w-full h-full border-none outline-none  focus:ring-0 text-primary"
-        editor={editor}
-      />
+      <div className="space-y-2">
+        {/* section to expand */}
+        {expanded && (
+          <div className="space-y-2 mb-1">
+            <MultiSelect
+              label="To"
+              placeholder="Add recipients"
+              value={toValues}
+              onChange={setToValues}
+            />
+            <MultiSelect
+              label="Cc"
+              placeholder="Add recipients"
+              value={ccValues}
+              onChange={setCcValues}
+            />
+            {/* BCC */}
+            <Input
+              defaultValue={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Subject"
+              className="placeholder:text-xs font-medium"
+            />
+          </div>
+        )}
+        {/* DRAFT */}
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <span className="font-semibold text-xs text-green-700">Draft:</span>
+
+          <span className="text-sm ">to: {to.join(",")}</span>
+        </div>
+      </div>
+
+      <div className="border rounded-md">
+        <EditorContent
+          editor={editor}
+          className="placeholder:text-green-500"
+          placeholder="write your email..."
+          value={value}
+        />
+      </div>
+      <Separator />
+      <Button
+        variant={"secondary"}
+        onClick={async () => {
+          editor?.commands.clearContent();
+          await handleSend(value);
+        }}
+        // isLoading={isSending}
+      >
+        Send
+      </Button>
     </section>
   );
 };
