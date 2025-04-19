@@ -65,11 +65,12 @@ const EmailEditor = ({
     immediatelyRender: false,
   });
   return (
-    <section className="space-y-2 rounded-lg overflow-clip bg-background/90  text-black overflow-y-scroll hide-scrollbar">
+    <section className="space-y-2 flex flex-col rounded-lg overflow-clip bg-background/90  text-black overflow-y-scroll hide-scrollbar">
       <div>
         <MenuBar editor={editor} />
       </div>
-      <div className="space-y-2">
+
+      <div className="space-y-2 ">
         {/* section to expand */}
         {expanded && (
           <div className="space-y-2 mb-1">
@@ -108,14 +109,17 @@ const EmailEditor = ({
       <div className="border rounded-md">
         <EditorContent
           editor={editor}
-          className="placeholder:text-green-500"
+          className="placeholder:text-green-500 "
           placeholder="write your email..."
           value={value}
         />
       </div>
+
       <Separator />
+
       <Button
-        variant={"secondary"}
+        variant={"default"}
+        className="self-end "
         onClick={async () => {
           editor?.commands.clearContent();
           await handleSend(value);

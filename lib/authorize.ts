@@ -15,9 +15,11 @@ export default async function Authorize(type: "Google" | "Office 365") {
       access_type: "offline",
       prompt: "consent",
       scope: [
+        "https://mail.google.com/",
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/gmail.compose",
         "https://www.googleapis.com/auth/gmail.send",
+        "https://www.googleapis.com/auth/gmail.modify",
         "email",
         "profile",
       ],

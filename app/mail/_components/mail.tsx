@@ -17,6 +17,8 @@ import ThreadList from "./threads/thread-list";
 import MessageActions from "./message/message-actions";
 
 import Messages from "./message/messages";
+import { ModeToggle } from "@/components/toggle-theme";
+import ComposeDrawer from "./compose-drawer";
 
 const Sidebar = dynamic(
   () => {
@@ -79,6 +81,11 @@ const Mail = ({
             </div>
             {/* ASK AI  */}
             ASK AI
+            <div className="flex items-center gap-1 py-2 border-y-2 border-y-border">
+              <div>account</div>
+              <ModeToggle />
+              <ComposeDrawer />
+            </div>
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle className="bg-muted" />
@@ -119,9 +126,8 @@ const Mail = ({
 
         <ResizablePanel defaultSize={defaultLayout[2]} minSize={40}>
           <div className="overflow-y-scroll h-screen">
-
-          <MessageActions />
-          <Messages />
+            <MessageActions />
+            <Messages />
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

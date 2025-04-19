@@ -65,7 +65,7 @@ export class Account {
   async performInitialSync(): Promise<SyncResponse | undefined> {
     try {
       const daysWithin = Math.floor(
-        (Date.now() - 3 * 24 * 60 * 60 * 1000) / 1000
+        (Date.now() - 14 * 24 * 60 * 60 * 1000) / 1000
       );
       const response = await this.startSync(daysWithin);
 

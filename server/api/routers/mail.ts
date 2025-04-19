@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { authorizeAccountAccess } from "./accounts";
 import { Prisma } from "@prisma/client";
+import { GoogleService } from "@/lib/google";
+import { MailOptions } from "nodemailer/lib/json-transport";
+import nodemailer from "nodemailer";
 
 const threadSchema = z.object({
   q: z.string().optional(),
@@ -37,7 +40,7 @@ export const mailsRouter = createTRPCRouter({
         };
         return ctx.db.thread.findMany({
           where: filter,
-          // take: 15,
+          take: 15,
           include: {
             emails: {
               orderBy: { sentAt: "asc" },
@@ -185,5 +188,64 @@ export const mailsRouter = createTRPCRouter({
         sentAt: sentAt,
       };
       return data;
+    }),
+
+  sendEmail: protectedProcedure
+    .input(
+      z.object({
+        accountId: z.string(),
+        // from: z.string(),
+        // to: z.string(),
+        // body: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const { accountId } = input;
+        const googleService = new GoogleService();
+        const account = await authorizeAccountAccess(
+          accountId,
+          ctx.auth.userId
+        );
+
+        console.log("account", account);
+
+        // const data = await googleService.refreshAccessToken(
+        //   account.refreshToken as string
+        // );
+
+        // console.log("data", data);
+
+        const transport = nodemailer.createTransport({
+          streamTransport: true,
+          newline: "unix",
+          buffer: true,
+        });
+
+        const mailOptions = {
+          from: account.emailAddress,
+          to: "roshdy2810@gmail.com",
+          subject: "Hello from Gmail API",
+          text: "This is a test email sent via Gmail API and Node.js!",
+          date: new Date(),
+        } satisfies MailOptions;
+
+        const message = await transport.sendMail(mailOptions);
+
+        const encodedMessage = message.message
+          .toString("base64")
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=+$/, "");
+
+        const response = await googleService.sendMessage(
+          encodedMessage,
+          account.accessToken
+        );
+
+        console.log("response", response);
+      } catch (error) {
+        console.error("Error sending email:", error);
+      }
     }),
 });

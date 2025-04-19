@@ -84,6 +84,17 @@ export class GoogleService {
     };
   }
 
+  async sendMessage(rawValue: string, token: string) {
+    console.log("sending message");
+    this.client.setCredentials({ access_token: token });
+    return await this.gmail.users.messages.send({
+      userId: "me",
+      auth: this.client,
+      requestBody: {
+        raw: rawValue,
+      },
+    });
+  }
   async getMessage(messageId: string) {
     const emailParser = new EmailParser();
     const response = await this.gmail.users.messages.get({

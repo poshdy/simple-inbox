@@ -14,6 +14,7 @@ export const authorizeAccountAccess = async (
     },
     select: {
       accessToken: true,
+      refreshToken: true,
       name: true,
       emailAddress: true,
       id: true,

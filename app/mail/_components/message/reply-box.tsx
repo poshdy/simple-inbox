@@ -8,9 +8,9 @@ interface ReplyProps {
   accountId: string;
 }
 const ReplyBox = ({ accountId, threadId }: ReplyProps) => {
-  const [value, setValue] = useState<string>("");
   const trpc = useTRPC();
-
+  
+  const [value, setValue] = useState<string>("");
   const [toValues, setToValues] =
     useState<{ label: string; value: string }[]>();
   const [ccValues, setCcValues] =

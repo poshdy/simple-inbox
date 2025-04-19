@@ -3,7 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCReactProvider } from "@/trpc/react";
-import { ThemeProvider } from "@/components/themes-provider";
+// import { ThemeProvider } from "@/components/themes-provider";
 import KbarProvider from "@/components/kbar";
 
 const poppins = Poppins({
@@ -22,17 +22,17 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <ThemeProvider attribute="class" defaultTheme="dark">
-        <html lang="en">
-          <TRPCReactProvider>
-            <KbarProvider>
-              <body className={`${poppins.className} antialiased`}>
-                {children}
-              </body>
-            </KbarProvider>
-          </TRPCReactProvider>
-        </html>
-      </ThemeProvider>
+      <html lang="en">
+        {/* <ThemeProvider attribute="class" defaultTheme="dark" enableSystem> */}
+        <TRPCReactProvider>
+          <KbarProvider>
+            <body className={`${poppins.className} antialiased`}>
+              {children}
+            </body>
+          </KbarProvider>
+        </TRPCReactProvider>
+        {/* </ThemeProvider> */}
+      </html>
     </ClerkProvider>
   );
 }
