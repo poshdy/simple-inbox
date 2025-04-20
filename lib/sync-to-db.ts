@@ -1,13 +1,13 @@
-import { EmailMessage, EmailAttachment } from "@/types";
+import { EmailMessage } from "@/types";
 import { db } from "@/server/db";
 import cleanHtml from "sanitize-html";
 import plimit from "p-limit";
+import { EmailAddress } from "@prisma/client";
 
 export class DatabaseSync {
   async syncEmailsToDatabase(emails: EmailMessage[], accountId: string) {
     console.log("syncing emails to database", emails.length);
 
-    console.time("syncEmailsToDatabase");
     const limit = plimit(6);
 
     const syncToDB = async () => {
@@ -20,8 +20,6 @@ export class DatabaseSync {
 
     try {
       await syncToDB();
-
-      console.timeEnd("syncEmailsToDatabase");
     } catch (error) {
       console.log("error", error);
     }
@@ -36,6 +34,7 @@ export class DatabaseSync {
     try {
       let emailLabelType: "inbox" | "sent" | "draft" = "inbox";
 
+      console.log("email", email);
       if (
         email.sysLabels.includes("inbox") ||
         email.sysLabels.includes("important")
@@ -59,33 +58,21 @@ export class DatabaseSync {
         addressesToUpsert.set(address.address, address);
       }
 
-      // const upsertedAddresses: Awaited<
-      //   ReturnType<typeof this.upsertEmailAddresses>
-      // >[] = [];
+      const upsertedAddresses: Awaited<
+        ReturnType<typeof this.upsertEmailAddresses>
+      >[] = [];
 
-      const addresses = [...addressesToUpsert.values()];
+      for (const address of addressesToUpsert.values()) {
+        const upsertedAddress = await this.upsertEmailAddresses(
+          address,
+          accountId
+        );
 
-      const createdAddress = await db.emailAddress.createManyAndReturn({
-        data: addresses.map((address) => ({
-          accountId,
-          address: address.address,
-          name: address.name,
-          raw: `${address.name} ${address.address}`,
-        })),
-        skipDuplicates: true,
-      });
-
-      // for (const address of addressesToUpsert.values()) {
-      //   const upsertedAddress = await this.upsertEmailAddresses(
-      //     address,
-      //     accountId
-      //   );
-
-      //   upsertedAddresses.push(upsertedAddress);
-      // }
+        upsertedAddresses.push(upsertedAddress);
+      }
 
       const addressMap = new Map(
-        createdAddress
+        upsertedAddresses
           .filter(Boolean)
           .map((address) => [address!.address, address])
       );
@@ -234,85 +221,39 @@ export class DatabaseSync {
       });
 
       if (email.hasAttachments) {
-        await Promise.all(
-          email.attachments.map((attachment) =>
-            this.upsertAttachment(email.id, attachment)
-          )
-        );
+        await db.emailAttachment.createMany({
+          data: email.attachments.map((attachment) => ({
+            id: attachment.id,
+            mimeType: attachment.mimeType,
+            emailId: email.id,
+            size: attachment.size,
+            name: attachment.name,
+          })),
+        });
       }
-
-      // const threadEmails = await db.email.findMany({
-      //   where: { threadId: thread.id },
-      // });
-
-      // let threadFolderType = "sent";
-
-      // for (const threadEmail of threadEmails) {
-      //   if (threadEmail.emailLabel === "inbox") {
-      //     threadFolderType = "inbox";
-      //     break;
-      //   } else if (threadEmail.emailLabel == "draft") {
-      //     threadFolderType = "draft";
-      //   }
-      // }
-
-      // await db.thread.update({
-      //   where: {
-      //     id: thread.id,
-      //   },
-      //   data: {
-      //     inboxStatus: threadFolderType === "inbox",
-      //     sentStatus: threadFolderType === "sent",
-      //     draftStatus: threadFolderType === "draft",
-      //   },
-      // });
     } catch (error) {
       console.log("ERROR", error);
     }
   }
 
-  // private async upsertEmailAddresses(email: EmailAddress, accountId: string) {
-  //   return await db.emailAddress.upsert({
-  //     where: {
-  //       accountId_address: {
-  //         accountId,
-  //         address: email.address ?? "",
-  //       },
-  //     },
-  //     update: {
-  //       name: email.name,
-  //       raw: `${email.name} ${email.address}`,
-  //     },
-  //     create: {
-  //       address: email.address,
-  //       accountId,
-  //       name: email.name,
-  //       raw: `${email.name} ${email.address}`,
-  //     },
-  //   });
-  // }
-
-  private async upsertAttachment(emailId: string, attachment: EmailAttachment) {
-    try {
-      await db.emailAttachment.upsert({
-        where: {
-          id: attachment.id ?? "",
+  private async upsertEmailAddresses(email: EmailAddress, accountId: string) {
+    return await db.emailAddress.upsert({
+      where: {
+        accountId_address: {
+          accountId,
+          address: email.address ?? "",
         },
-        update: {
-          name: attachment.name,
-          mimeType: attachment.mimeType,
-          size: attachment.size,
-        },
-        create: {
-          id: attachment.id,
-          mimeType: attachment.mimeType,
-          emailId,
-          size: attachment.size,
-          name: attachment.name,
-        },
-      });
-    } catch (e) {
-      console.log("error", e);
-    }
+      },
+      update: {
+        name: email.name,
+        raw: `${email.name} ${email.address}`,
+      },
+      create: {
+        address: email.address,
+        accountId,
+        name: email.name,
+        raw: `${email.name} ${email.address}`,
+      },
+    });
   }
 }

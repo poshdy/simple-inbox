@@ -25,6 +25,9 @@ const useThreads = () => {
     trpc.mails.listThreads.queryOptions(
       { accountId, done: false, tab },
       {
+        refetchOnMount: false,
+        refetchOnReconnect: false,
+        refetchOnWindowFocus: false,
         enabled: !!accountId && !!tab,
         placeholderData: (e) => e,
         refetchInterval: 60000,

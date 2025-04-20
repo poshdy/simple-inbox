@@ -1,6 +1,6 @@
 import { Account } from "@/lib/account";
-import { DatabaseSync } from "@/lib/sync-to-db";
 import { db } from "@/server/db";
+import dayjs from "dayjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -23,23 +23,14 @@ export async function POST(request: NextRequest) {
 
   const account = new Account(dbAccount.accessToken);
 
-  const response = await account.performInitialSync();
+  const startDate = dayjs().subtract(14, "days");
+
+  const response = await account.syncEmails(accountId, startDate);
   if (!response) {
     return NextResponse.json({ error: "Failed to sync" }, { status: 500 });
   }
-  const { allEmails, nextPageToken } = response;
 
-  const sync = new DatabaseSync();
-  await sync.syncEmailsToDatabase(allEmails, accountId);
+  await account.performSync(accountId, startDate);
 
-  await db.account.update({
-    where: {
-      accessToken: dbAccount.accessToken,
-    },
-    data: {
-      nextPageToken: nextPageToken,
-    },
-  });
-  console.log("sync complete", nextPageToken);
-  return NextResponse.json({ success: true, nextPageToken }, { status: 200 });
+  return NextResponse.json({ success: true }, { status: 200 });
 }

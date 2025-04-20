@@ -1,12 +1,15 @@
 import { GoogleService } from "./google";
 import { db } from "@/server/db";
-import { auth } from "@clerk/nextjs/server";
+// import { auth } from "@clerk/nextjs/server";
 import { EmailMessage } from "../types";
+import dayjs, { Dayjs } from "dayjs";
+import { DatabaseSync } from "./sync-to-db";
+// import { auth } from "@clerk/nextjs/server";
 
-type SyncResponse = {
-  allEmails: EmailMessage[];
-  nextPageToken: string | undefined | null;
-};
+// type SyncResponse = {
+//   allEmails: EmailMessage[];
+//   nextPageToken: string | undefined | null;
+// };
 
 export class Account {
   private token: string;
@@ -16,96 +19,118 @@ export class Account {
     this.google = new GoogleService();
   }
 
-  private async getUpdated(
-    daysWithin: number,
-    pageToken: string | undefined | null
-  ) {
-    const { emails, nextPageToken } = await this.google.getMessages(
-      this.token,
-      daysWithin,
-      pageToken
-    );
+  async performSync(accountId: string, startDate: Dayjs) {
+    const response = await this.syncEmails(accountId, startDate);
 
-    return {
-      emails,
-      nextPageToken,
-    };
+    if (!response) {
+      throw new Error("Failed to sync emails");
+    }
+    const { allEmails, mostRecentDate } = response;
+    console.log("most recent date", dayjs.unix(mostRecentDate).toISOString());
+    await db.account.update({
+      where: { id: accountId },
+      data: {
+        lastSyncAt: mostRecentDate,
+      },
+    });
+
+    const sync = new DatabaseSync();
+    await sync.syncEmailsToDatabase(allEmails, accountId);
   }
-  private async startSync(days: number) {
+  async syncEmails(accountId: string, startDate: Dayjs) {
+    // get the last synced date from db by account ID
+
     try {
-      const { emails, nextPageToken } = await this.google.getMessages(
-        this.token,
-        days
+      const account = await db.account.findUnique({
+        where: { id: accountId },
+        select: { lastSyncAt: true, accessToken: true },
+      });
+
+      if (!account) throw new Error("Account Not Found");
+
+      let lastSyncedDate = Number(account?.lastSyncAt);
+
+      const unixTimeStampStartDate = startDate.unix();
+
+      console.log("start date unix", unixTimeStampStartDate);
+      console.log(
+        "start date string",
+        dayjs.unix(unixTimeStampStartDate).toISOString()
       );
 
+      console.log("last synced date db", lastSyncedDate);
+      // if there is no last synced date, set it to start date
+      if (!lastSyncedDate) {
+        console.log("runs");
+        lastSyncedDate = unixTimeStampStartDate;
+      }
+
+      const afterTimestamp = lastSyncedDate;
+
+      let allEmails: EmailMessage[] = [];
+
+      let nextPageToken = null;
+
+      let mostRecentDate = lastSyncedDate;
+
+      do {
+        const data = await this.google.getMessages(
+          account?.accessToken,
+          afterTimestamp,
+          nextPageToken
+        );
+
+        if (data.messages && data.messages.length > 0) {
+          const messages = data.messages;
+          nextPageToken = data.nextPageToken;
+          const emails = await Promise.all(
+            messages.map(async (message) => {
+              const emailInfo = await this.google.getMessage(
+                message?.id as string
+              );
+
+              console.log("subject", emailInfo.subject);
+
+              const internalUnix = dayjs(emailInfo.sentAt).unix();
+
+              if (internalUnix <= lastSyncedDate) {
+                return null;
+              }
+
+              if (internalUnix > mostRecentDate) {
+                mostRecentDate = internalUnix;
+              }
+              return emailInfo;
+            })
+          );
+          allEmails = [
+            ...allEmails,
+            ...emails.filter((email) => email !== null),
+          ];
+        }
+      } while (nextPageToken);
       return {
-        emails,
+        allEmails,
         nextPageToken,
+        mostRecentDate,
       };
     } catch (error) {
       if (error instanceof Error) {
-        if (error?.message == "Invalid Credentials") {
-          const { userId } = await auth();
-          const user = await db.user.findUnique({
-            where: { id: userId as string },
-            select: { accounts: { select: { refreshToken: true } } },
-          });
-          const data = await this.google.refreshAccessToken(
-            user?.accounts[0]?.refreshToken as string
-          );
-          await db.account.update({
-            where: { accessToken: this.token },
-            data: { accessToken: data.access_token },
-          });
-        }
+        // if (error?.message == "Invalid Credentials") {
+        //   const { userId } = await auth();
+        //   const user = await db.user.findUnique({
+        //     where: { id: userId as string },
+        //     select: { accounts: { select: { refreshToken: true } } },
+        //   });
+        //   const data = await this.google.refreshAccessToken(
+        //     user?.accounts[0]?.refreshToken as string
+        //   );
+        //   await db.account.update({
+        //     where: { accessToken: this.token },
+        //     data: { accessToken: data.access_token },
+        //   });
+        // }
       }
-    }
-  }
-
-  async performInitialSync(): Promise<SyncResponse | undefined> {
-    try {
-      const daysWithin = Math.floor(
-        (Date.now() - 14 * 24 * 60 * 60 * 1000) / 1000
-      );
-      const response = await this.startSync(daysWithin);
-
-      let nextPageToken: string | undefined | null = response?.nextPageToken;
-
-      console.log("first page token", nextPageToken);
-
-      let updatedResponse = await this.getUpdated(daysWithin, nextPageToken);
-
-      if (updatedResponse?.nextPageToken) {
-        nextPageToken = updatedResponse.nextPageToken;
-      }
-      console.log("updated response", updatedResponse.nextPageToken);
-
-      const initalEmail = response?.emails as EmailMessage[];
-
-      console.log("initial emails", initalEmail.length);
-
-      let allEmails = [
-        ...initalEmail,
-        ...(updatedResponse?.emails as EmailMessage[]),
-      ];
-
-      while (updatedResponse?.nextPageToken) {
-        console.log("enterd the loop");
-        updatedResponse = await this.getUpdated(
-          daysWithin,
-          updatedResponse.nextPageToken
-        );
-        allEmails = allEmails?.concat(updatedResponse?.emails);
-        console.log("emails are saved");
-      }
-
-      console.log(`initial sync done with ${allEmails.length} emails!`);
-      return {
-        nextPageToken,
-        allEmails,
-      };
-    } catch (error) {
-      console.log("ERROR IN PERFORM INIAL SYNC", error);
     }
   }
 }

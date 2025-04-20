@@ -47,19 +47,22 @@ export class GoogleService {
       ),
     };
   }
-  async getMessages(
-    token: string,
-    days: number | undefined = undefined,
-    pageToken: string | undefined | null = undefined
+
+  async getUpdatedMessages(
+    accessToken: string,
+    pageToken: string | undefined | null
   ) {
-    this.client.setCredentials({ access_token: token });
+    if (!pageToken) {
+      return;
+    }
+
+    this.client.setCredentials({ access_token: accessToken });
 
     const response = await this.gmail.users.messages.list({
       auth: this.client,
-      q: `after:${days}`,
       userId: "me",
+      pageToken: pageToken,
       maxResults: 20,
-      pageToken: pageToken ? pageToken : undefined,
     });
 
     const inital = response.data;
@@ -74,6 +77,9 @@ export class GoogleService {
         const message = messages[i];
 
         const emailInfo = await this.getMessage(message?.id as string);
+
+        console.log("email subject", emailInfo.subject);
+
         emails.push(emailInfo);
       }
     }
@@ -82,6 +88,22 @@ export class GoogleService {
       emails,
       nextPageToken,
     };
+  }
+  async getMessages(
+    token: string,
+    days: number | undefined = undefined,
+    pageToken: string | undefined | null = undefined
+  ) {
+    this.client.setCredentials({ access_token: token });
+
+    const response = await this.gmail.users.messages.list({
+      auth: this.client,
+      q: `after:${days}`,
+      userId: "me",
+      pageToken: pageToken || undefined,
+    });
+
+    return response.data;
   }
 
   async sendMessage(rawValue: string, token: string) {

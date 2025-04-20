@@ -121,10 +121,8 @@ export class EmailParser implements IEmailParser {
       .map((value: string) => ({ address: value.trim(), name: "" }));
   }
   extractEmail(text: string): EmailAddress[] | EmailAddress {
-    // const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const delimiter = text.indexOf(",");
     if (delimiter != -1) {
-      console.log("mutiple", text);
       const arr = text.split(",");
       const result = arr.map((record) => {
         const arr2 = record.split(" ");
@@ -134,18 +132,13 @@ export class EmailParser implements IEmailParser {
         return { address: address.replace("<", "").replace(">", ""), name };
       });
 
-      console.log("mutiple result", result);
       return result;
     }
     const content = text?.split(" ");
 
     const email = content.pop();
     const name = content.join(" ");
-    console.log({
-      single: "single",
-      name,
-      email: email?.replace("<", "").replace(">", "").trim(),
-    });
+
     return {
       name,
       address: email?.replace("<", "").replace(">", "").trim() ?? "",

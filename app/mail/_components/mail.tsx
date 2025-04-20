@@ -117,7 +117,7 @@ const Mail = ({
               <ThreadList />
             </TabsContent>
             <TabsContent value="done">
-              <ThreadList />
+              {/* <ThreadList /> */}
             </TabsContent>
           </Tabs>
         </ResizablePanel>

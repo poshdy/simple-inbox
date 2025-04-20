@@ -5,6 +5,8 @@ import { Prisma } from "@prisma/client";
 import { GoogleService } from "@/lib/google";
 import { MailOptions } from "nodemailer/lib/json-transport";
 import nodemailer from "nodemailer";
+import { Account } from "@/lib/account";
+import dayjs from "dayjs";
 
 const threadSchema = z.object({
   q: z.string().optional(),
@@ -21,7 +23,13 @@ export const mailsRouter = createTRPCRouter({
         const { accountId, tab, done } = input;
         const userId = ctx.auth.userId;
 
-        await authorizeAccountAccess(accountId, userId);
+        const authorizedAccount = await authorizeAccountAccess(
+          accountId,
+          userId
+        );
+
+        const account = new Account(authorizedAccount.accessToken);
+        await account.performSync(authorizedAccount.id, dayjs());
 
         const filter: Prisma.ThreadWhereInput = { accountId };
 
@@ -38,12 +46,12 @@ export const mailsRouter = createTRPCRouter({
         filter.done = {
           equals: done,
         };
-        return ctx.db.thread.findMany({
+        const threads = await ctx.db.thread.findMany({
           where: filter,
-          take: 15,
+          take: 10,
           include: {
             emails: {
-              orderBy: { sentAt: "asc" },
+              orderBy: { sentAt: "desc" },
               select: {
                 id: true,
                 from: true,
@@ -64,6 +72,8 @@ export const mailsRouter = createTRPCRouter({
             },
           },
         });
+
+        return threads;
       } catch (error) {
         console.error("ERROR FETCHING THREADS", error);
       }
