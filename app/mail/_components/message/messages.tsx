@@ -7,7 +7,7 @@ import ReplyBox from "./reply-box";
 import Skeleton from "@/components/skeleton";
 
 const Messages = () => {
-  const { threads, threadId, isPending } = useThreads();
+  const { data, threadId, isPending } = useThreads();
 
   if (isPending)
     return (
@@ -16,6 +16,7 @@ const Messages = () => {
         <Skeleton avatar count={1} body title={false} paragraph={false} />
       </div>
     );
+  const threads = data?.pages.flatMap((page) => page?.threads) ?? [];
   const thread = threads?.find((t) => t?.id == threadId);
 
   return (

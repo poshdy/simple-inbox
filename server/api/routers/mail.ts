@@ -13,6 +13,8 @@ const threadSchema = z.object({
   tab: z.string().optional().default("Inbox"),
   accountId: z.string(),
   done: z.boolean(),
+  limit: z.number().optional().default(15),
+  cursor: z.string().nullish(),
 });
 
 export const mailsRouter = createTRPCRouter({
@@ -20,7 +22,7 @@ export const mailsRouter = createTRPCRouter({
     .input(threadSchema)
     .query(async ({ ctx, input }) => {
       try {
-        const { accountId, tab, done } = input;
+        const { accountId, tab, done, limit, cursor } = input;
         const userId = ctx.auth.userId;
 
         const authorizedAccount = await authorizeAccountAccess(
@@ -46,12 +48,14 @@ export const mailsRouter = createTRPCRouter({
         filter.done = {
           equals: done,
         };
-        const threads = await ctx.db.thread.findMany({
+
+        const data = await ctx.db.thread.findMany({
           where: filter,
-          take: 10,
+          take: limit + 1,
+          cursor: cursor ? { id: cursor } : undefined,
           include: {
             emails: {
-              orderBy: { sentAt: "desc" },
+              orderBy: { sentAt: "asc" },
               select: {
                 id: true,
                 from: true,
@@ -64,16 +68,20 @@ export const mailsRouter = createTRPCRouter({
                 sentAt: true,
               },
             },
-            account: {
-              select: {
-                name: true,
-                emailAddress: true,
-              },
-            },
           },
         });
 
-        return threads;
+        let nextCursor: string | null = null;
+
+        if (data.length > limit) {
+          const nextItem = data.pop();
+          nextCursor = nextItem?.id || null;
+        }
+
+        return {
+          threads: data,
+          nextCursor,
+        };
       } catch (error) {
         console.error("ERROR FETCHING THREADS", error);
       }

@@ -1,6 +1,6 @@
 import { useTRPC } from "@/trpc/root";
 import { EmailLabel } from "@prisma/client";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useLocalStorage } from "usehooks-ts";
 import { useThread } from "./use-thread";
 
@@ -16,29 +16,24 @@ const useThreads = () => {
     "simple-inbox-tab",
     EmailLabel.inbox
   );
-  // TODO ADD DONE STATE AND SEND IT TO BACKEND
-  const {
-    data: threads,
-    isPending,
-    refetch,
-  } = useQuery(
-    trpc.mails.listThreads.queryOptions(
-      { accountId, done: false, tab },
-      {
-        refetchOnMount: false,
-        refetchOnReconnect: false,
-        refetchOnWindowFocus: false,
-        enabled: !!accountId && !!tab,
-        placeholderData: (e) => e,
-        refetchInterval: 60000,
-      }
-    )
-  );
+
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage, isPending } =
+    useInfiniteQuery(
+      trpc.mails.listThreads.infiniteQueryOptions(
+        { accountId, done: false, tab },
+        {
+          getNextPageParam: (data) => data?.nextCursor,
+        }
+      )
+    );
 
   return {
-    threads,
+    data,
     isPending,
-    refetch,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    // refetch,
     accountId,
     threadId,
     setThreadId,
