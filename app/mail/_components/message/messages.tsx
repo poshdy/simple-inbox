@@ -4,11 +4,18 @@ import { Separator } from "@/components/ui/separator";
 import MessageHeader from "./message-header";
 import Message from "./message";
 import ReplyBox from "./reply-box";
+import Skeleton from "@/components/skeleton";
 
 const Messages = () => {
   const { threads, threadId, isPending } = useThreads();
 
-  if (isPending) return <div>Loading</div>;
+  if (isPending)
+    return (
+      <div className="w-full h-screen pt-5 space-y-10">
+        <Skeleton count={1} avatar />
+        <Skeleton avatar count={1} body title={false} paragraph={false} />
+      </div>
+    );
   const thread = threads?.find((t) => t?.id == threadId);
 
   return (

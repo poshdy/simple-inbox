@@ -34,7 +34,7 @@ export class DatabaseSync {
     try {
       let emailLabelType: "inbox" | "sent" | "draft" = "inbox";
 
-      console.log("email", email);
+      console.log("email", email.subject);
       if (
         email.sysLabels.includes("inbox") ||
         email.sysLabels.includes("important")

@@ -1,15 +1,10 @@
 import { GoogleService } from "./google";
 import { db } from "@/server/db";
-// import { auth } from "@clerk/nextjs/server";
 import { EmailMessage } from "../types";
 import dayjs, { Dayjs } from "dayjs";
 import { DatabaseSync } from "./sync-to-db";
+import { auth } from "@clerk/nextjs/server";
 // import { auth } from "@clerk/nextjs/server";
-
-// type SyncResponse = {
-//   allEmails: EmailMessage[];
-//   nextPageToken: string | undefined | null;
-// };
 
 export class Account {
   private token: string;
@@ -22,6 +17,7 @@ export class Account {
   async performSync(accountId: string, startDate: Dayjs) {
     const response = await this.syncEmails(accountId, startDate);
 
+    console.log("response", response);
     if (!response) {
       throw new Error("Failed to sync emails");
     }
@@ -38,7 +34,6 @@ export class Account {
     await sync.syncEmailsToDatabase(allEmails, accountId);
   }
   async syncEmails(accountId: string, startDate: Dayjs) {
-    // get the last synced date from db by account ID
 
     try {
       const account = await db.account.findUnique({
@@ -116,20 +111,20 @@ export class Account {
       };
     } catch (error) {
       if (error instanceof Error) {
-        // if (error?.message == "Invalid Credentials") {
-        //   const { userId } = await auth();
-        //   const user = await db.user.findUnique({
-        //     where: { id: userId as string },
-        //     select: { accounts: { select: { refreshToken: true } } },
-        //   });
-        //   const data = await this.google.refreshAccessToken(
-        //     user?.accounts[0]?.refreshToken as string
-        //   );
-        //   await db.account.update({
-        //     where: { accessToken: this.token },
-        //     data: { accessToken: data.access_token },
-        //   });
-        // }
+        if (error?.message == "Invalid Credentials") {
+          const { userId } = await auth();
+          const user = await db.user.findUnique({
+            where: { id: userId as string },
+            select: { accounts: { select: { refreshToken: true } } },
+          });
+          const data = await this.google.refreshAccessToken(
+            user?.accounts[0]?.refreshToken as string
+          );
+          await db.account.update({
+            where: { accessToken: this.token },
+            data: { accessToken: data.access_token },
+          });
+        }
       }
     }
   }

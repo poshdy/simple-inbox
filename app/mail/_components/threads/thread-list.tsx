@@ -4,16 +4,13 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import dayjs from "dayjs";
 import { cn } from "@/lib/utils";
+import Skeleton from "@/components/skeleton";
 
 const ThreadList = () => {
   const { threads, isPending, threadId, setThreadId } = useThreads();
 
   if (isPending) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        Loading
-      </div>
-    );
+    return <Skeleton count={5} />;
   }
 
   const groupByDate = threads?.reduce((acc, thread) => {
