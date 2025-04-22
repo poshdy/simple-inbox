@@ -9,12 +9,13 @@
 
 .ProseMirror {
   outline: none;
-  padding: 6px 4px 6px 4px;
+  padding: 6px;
   border: none;
   background-color: transparent;
-  color: gray;
+  color: black;
   min-height: 250px;
-  max-height: 500px;
+  max-height: 300px;
+  overflow-y: scroll;
   /* @apply p-3;
     @apply focus:outline-none; */
 }

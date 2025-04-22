@@ -42,8 +42,6 @@ const MultiSelect = ({
     ),
     value: address.address,
   }));
-  // const [input, setInput] = useState();
-  // const options = suggestions.m;
 
   return (
     <div className="flex gap-1 items-center border rounded-md px-1">
@@ -66,7 +64,6 @@ const MultiSelect = ({
             return "dark:text-white dark:bg-gray-700 rounded-md";
           },
         }}
-        // onInputChange={setInput}
         placeholder={placeholder}
         classNamePrefix="select"
         // value={value}

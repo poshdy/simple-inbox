@@ -13,12 +13,11 @@ import { PenBox } from "lucide-react";
 import useThreads from "@/hooks/use-threads";
 import { useTRPC } from "@/trpc/root";
 import { useMutation } from "@tanstack/react-query";
-// import useThreads from "@/hooks/use-threads";
 
 const ComposeDrawer = () => {
   const trpc = useTRPC();
-  const { mutateAsync } = useMutation(trpc.mails.sendEmail.mutationOptions());
   const { account } = useThreads();
+  const { mutateAsync } = useMutation(trpc.mails.sendEmail.mutationOptions());
   const [value, setValue] = useState<string>("");
   const [toValues, setToValues] = useState<{ label: string; value: string }[]>(
     []
@@ -29,13 +28,13 @@ const ComposeDrawer = () => {
   const [subject, setSubject] = useState<string>("");
 
   const handleSend = async () => {
+    const to = toValues.map((item) => item.value);
+
     await mutateAsync({
-      // from: account?.emailAddress as string,
       accountId: account?.id as string,
-      // to: "roshdy2810@gmail.com",
-      // // cc: ccValues,
-      // // subject: "hello world",
-      // body: value,
+      to,
+      subject,
+      body: value,
     });
   };
   return (

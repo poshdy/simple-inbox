@@ -211,28 +211,30 @@ export const mailsRouter = createTRPCRouter({
   sendEmail: protectedProcedure
     .input(
       z.object({
+        // TODO ADD CC AND BCC as OPTIONAL PROPERTIES
         accountId: z.string(),
-        // from: z.string(),
-        // to: z.string(),
-        // body: z.string(),
+        to: z.string().email().array(),
+        subject: z.string(),
+        body: z.string(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const { accountId } = input;
+        const { accountId, body, subject, to } = input;
         const googleService = new GoogleService();
         const account = await authorizeAccountAccess(
           accountId,
           ctx.auth.userId
         );
 
-        console.log("account", account);
+        const data = await googleService.refreshAccessToken(
+          account.refreshToken as string
+        );
 
-        // const data = await googleService.refreshAccessToken(
-        //   account.refreshToken as string
-        // );
-
-        // console.log("data", data);
+        const updatedAccount = await ctx.db.account.update({
+          where: { id: accountId },
+          data: { accessToken: data.access_token },
+        });
 
         const transport = nodemailer.createTransport({
           streamTransport: true,
@@ -242,9 +244,9 @@ export const mailsRouter = createTRPCRouter({
 
         const mailOptions = {
           from: account.emailAddress,
-          to: "roshdy2810@gmail.com",
-          subject: "Hello from Gmail API",
-          text: "This is a test email sent via Gmail API and Node.js!",
+          to: to,
+          subject,
+          html: body,
           date: new Date(),
         } satisfies MailOptions;
 
@@ -258,7 +260,7 @@ export const mailsRouter = createTRPCRouter({
 
         const response = await googleService.sendMessage(
           encodedMessage,
-          account.accessToken
+          updatedAccount.accessToken
         );
 
         console.log("response", response);

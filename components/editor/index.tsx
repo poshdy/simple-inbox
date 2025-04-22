@@ -2,7 +2,6 @@
 import "./style.css";
 import React, { useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import Heading from "@tiptap/extension-heading";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
@@ -47,16 +46,14 @@ const EmailEditor = ({
   const [expanded, setExpanded] = useState<boolean>(defaultToolbarExpanded);
   const editor = useEditor({
     shouldRerenderOnTransaction: false,
-
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        heading: { levels: [1, 2, 4] },
+      }),
       Underline,
       Highlight,
       TextAlign.configure({
         types: ["heading", "paragraph"],
-      }),
-      Heading.configure({
-        levels: [1, 2, 3],
       }),
     ],
     onUpdate: (e) => {
@@ -91,25 +88,27 @@ const EmailEditor = ({
               defaultValue={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Subject"
-              className="placeholder:text-xs font-medium"
+              className="placeholder:text-xs font-medium focus-visible:ring-0 focus:outline-none"
             />
           </div>
         )}
         {/* DRAFT */}
         <div
-          className="flex items-center gap-2 cursor-pointer"
+          className="flex items-center gap-1 my-1 cursor-pointer"
           onClick={() => setExpanded(!expanded)}
         >
           <span className="font-semibold text-xs text-green-700">Draft:</span>
 
-          <span className="text-sm ">to: {to.join(",")}</span>
+          <span className="text-sm">
+            to {to.join(",") || toValues.map((addr) => addr.value).join(",")}
+          </span>
         </div>
       </div>
 
       <div className="border rounded-md">
         <EditorContent
           editor={editor}
-          className="placeholder:text-green-500 "
+          className=""
           placeholder="write your email..."
           value={value}
         />
@@ -124,7 +123,6 @@ const EmailEditor = ({
           editor?.commands.clearContent();
           await handleSend(value);
         }}
-        // isLoading={isSending}
       >
         Send
       </Button>

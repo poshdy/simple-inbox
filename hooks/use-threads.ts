@@ -9,9 +9,9 @@ const useThreads = () => {
   const { data: accounts } = useQuery(
     trpc.accounts.get.queryOptions(undefined)
   );
-
   const [threadId, setThreadId] = useThread();
   const [accountId] = useLocalStorage("accountId", "");
+
   const [tab] = useLocalStorage<EmailLabel>(
     "simple-inbox-tab",
     EmailLabel.inbox
@@ -27,13 +27,13 @@ const useThreads = () => {
       )
     );
 
+  const threads = data?.pages.flatMap((page) => page?.threads ?? []) || [];
   return {
-    data,
+    threads,
     isPending,
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-    // refetch,
     accountId,
     threadId,
     setThreadId,
